@@ -1,1 +1,1 @@
-web: python bmc_webhook_listener_render:app
+web: gunicorn bmc_webhook_listener:app
