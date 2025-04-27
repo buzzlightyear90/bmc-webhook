@@ -19,9 +19,10 @@ def receive_webhook():
     commission = data.get("data",{}).get("commission", {})
     additional_info_raw = commission.get("additional_info")
     if additional_info_raw:
-        additional_info = f'"{additional_info_raw.replace("\"", "\"\"")}"'
+        additional_info = f'"{additional_info_raw.replace(chr(34), chr(34) * 2)}"'
     else:
         additional_info = '""'
+
     images = commission.get("attachments", [])  # This should be a list
 
     # Prepare attachments as string list
