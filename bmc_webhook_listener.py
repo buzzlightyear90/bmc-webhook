@@ -18,7 +18,10 @@ def receive_webhook():
     # Access nested commission data
     commission = data.get("data",{}).get("commission", {})
     additional_info_raw = commission.get("additional_info")
-    additional_info = f'"{additional_info_raw.replace("\"", "\"\"")}"'
+    if additional_info_raw:
+        additional_info = f'"{additional_info_raw.replace("\"", "\"\"")}"'
+    else:
+        additional_info = '""'
     images = commission.get("attachments", [])  # This should be a list
 
     # Prepare attachments as string list
