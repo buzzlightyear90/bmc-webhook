@@ -5,11 +5,18 @@ import os
 
 app = Flask(__name__)
 
-# Google Sheets Setup
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('path_to_your_service_account.json', scope)
-client = gspread.authorize(creds)
-sheet = client.open("pet-portrait-orders").sheet1
+# Authenticate Google Sheets API using environment variable
+def get_gsheet_client():
+    service_account_info = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT'])
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+    client = gspread.authorize(creds)
+    return client
+
+# Initialize once
+gsheet_client = get_gsheet_client()
+spreadsheet = gsheet_client.open("pet-portrait-orders")  # <-- Replace this
+worksheet = spreadsheet.sheet1  # First sheet/tab
 
 # Webhook route
 @app.route('/webhook', methods=['POST'])
@@ -34,9 +41,14 @@ def receive_webhook():
     # Prepare attachments as string list
     attachments_str = "[" + ", ".join(images) + "]"
 
-    # Insert a new row in the Google Sheet
-    new_row = [customer_name, customer_email, additional_info, total_amount_charged, attachments_str]
-    sheet.append_row(new_row, value_input_option="USER_ENTERED")
+    # Append new row to Google Sheet
+    worksheet.append_row([
+        customer_name,
+        customer_email,
+        additional_info,
+        total_amount_charged,
+        attachments_str
+    ])
 
     return jsonify({"status": "success"}), 200
 
