@@ -1,9 +1,15 @@
 from flask import Flask, request, jsonify
-import json
-import csv
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import os
 
 app = Flask(__name__)
+
+# Google Sheets Setup
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name('path_to_your_service_account.json', scope)
+client = gspread.authorize(creds)
+sheet = client.open("pet-portrait-orders").sheet1
 
 # Webhook route
 @app.route('/webhook', methods=['POST'])
@@ -28,39 +34,9 @@ def receive_webhook():
     # Prepare attachments as string list
     attachments_str = "[" + ", ".join(images) + "]"
 
-    # CSV file path
-    csv_filename = "orders.csv"
-    file_exists = os.path.isfile(csv_filename)
-
-    # Append to CSV
-    with open(csv_filename, mode="a", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile, quoting=csv.QUOTE_MINIMAL)
-        if not file_exists:
-            writer.writerow(["name", "email", "additional info", "total amount charged", "attachments"])
-
-        writer.writerow([
-            customer_name,
-            customer_email,
-            additional_info,
-            total_amount_charged,
-            attachments_str
-        ])
-
-
-    # # Save the extracted data
-    # order_details = f"""
-    # Name: {customer_name}
-    # Email: {customer_email}
-    # Additional Info: {additional_info}
-    # Total Amount Charged: {total_amount_charged}
-    # Attachments: {images}
-    # """
-
-    # print(order_details)
-
-    # # Save details to a file (optional)
-    # with open("bmc_orders.txt", "a") as file:
-    #     file.write(order_details + "\n")
+    # Insert a new row in the Google Sheet
+    new_row = [customer_name, customer_email, additional_info, total_amount_charged, attachments_str]
+    sheet.append_row(new_row, value_input_option="USER_ENTERED")
 
     return jsonify({"status": "success"}), 200
 
