@@ -1,1 +1,1 @@
-web: gunicorn bmc_webhook_listener:app
+web: gunicorn -w 2 bmc_webhook_listener:app
